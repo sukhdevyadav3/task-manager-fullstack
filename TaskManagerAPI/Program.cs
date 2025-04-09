@@ -69,6 +69,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<TaskItemDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("TaskManagerConnectionString")));
 
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
