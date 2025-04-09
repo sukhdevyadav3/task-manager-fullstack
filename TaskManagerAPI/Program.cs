@@ -10,21 +10,22 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
-
+// ✅ CORS for both local dev and Netlify frontend
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", builder =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        builder.WithOrigins(
-            "http://127.0.0.1:5500",
-            "https://task-manager-sukhdev.netlify.app/" 
+        policy.WithOrigins(
+            "http://127.0.0.1:5500", // Local
+            "https://taskmanager-frontend-production.up.railway.app" // 🚀 Your hosted frontend
         )
         .AllowAnyMethod()
         .AllowAnyHeader();
     });
 });
 
-//  Configure JWT Authentication
+
+// ✅ JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
@@ -47,7 +48,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-//  Enable Swagger with JWT support
+// ✅ Swagger with JWT support
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "TaskManagerAPI", Version = "v1" });
@@ -55,7 +56,7 @@ builder.Services.AddSwaggerGen(c =>
     var securityScheme = new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Description = "Enter 'Bearer' followed by your token. Example: \"Bearer 12345abcdef\"",
+        Description = "Enter 'Bearer {token}'",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
@@ -68,26 +69,21 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-//  Configure EF Core SQL Server
+// ✅ EF Core - SQL Server
 builder.Services.AddDbContext<TaskItemDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("TaskManagerConnectionString")));
 
 var app = builder.Build();
 
-//  Swagger (enabled for all environments)
+// ✅ Middleware pipeline
 app.UseSwagger();
 app.UseSwaggerUI();
 
-//  CORS - Must be before auth
+app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
-
-//  Auth & HTTPS
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseHttpsRedirection();
-
-// 📡 API routes
 app.MapControllers();
 
 app.Run();
